@@ -1,7 +1,7 @@
 const Header = () => {
     return (
         <div>
-            <h1> This is Odan's boilerplate!</h1>
+            <h1> Le mariage de Hiromi et Audran</h1>
         </div>
     )
 }
