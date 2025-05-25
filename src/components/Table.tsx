@@ -1,28 +1,46 @@
 import React, { useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
-import * as L from 'leaflet';
 import { parseGoogleMapsUrl } from '../utils/maps';
-import type { Coordinates, ParsedMapData } from '../types/maps';
+import type { Coordinates } from '../types/maps';
 import LocationImage from './LocationImage';
+import { config } from '../config';
 
-export interface TableData {
-  [key: string]: string | number | undefined;
+export interface Venue {
+  id: string;
+  region: string;
+  name: string;
+  price: string;
+  comment: string;
+  map: string;
+  created_at: string;
+  [key: string]: string | undefined;
 }
 
 interface TableProps {
   headers: string[];
-  data: TableData[];
-  googleMapsApiKey?: string;
+  data: Venue[];
   initialSortColumn?: string;
+  googleMapsApiKey?: string;
+  renderActions?: (venue: Venue, onDelete?: (id: string) => void) => React.ReactNode;
+  onDelete?: (id: string) => void;
 }
 
-const formatDate = (dateString: string) => {
-  const date = new Date(dateString);
-  return new Intl.DateTimeFormat('en-US', { 
-    month: 'long',
-    day: 'numeric',
-    year: 'numeric'
-  }).format(date);
+// Header to field name mapping based on position
+const getFieldFromHeader = (header: string, headers: string[]): keyof Venue => {
+  // Get the index of the header
+  const index = headers.indexOf(header);
+  
+  // Map position to field name
+  switch (index) {
+    case 0: return 'region';    // Region
+    case 1: return 'name';      // Name
+    case 2: return 'price';     // Price
+    case 3: return 'comment';   // Comment
+    case 4:                     // Maps
+    case 5:                     // Preview
+    case 6: return 'map';       // Image (all use map field)
+    default: return 'name';     // Fallback to name
+  }
 };
 
 const formatPrice = (price: string | number) => {
@@ -32,86 +50,59 @@ const formatPrice = (price: string | number) => {
   }).format(Number(price));
 };
 
-const StatusBadge = ({ status }: { status: string }) => {
-  const getStatusStyle = () => {
-    switch (status.toLowerCase()) {
-      case 'confirmed':
-        return 'bg-green-100 text-green-800 border-green-200';
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
-    }
-  };
-
+const MapLink = ({ url }: { url: string }) => {
   return (
-    <span className={`px-3 py-1 text-xs font-medium rounded-full border ${getStatusStyle()}`}>
-      {status}
-    </span>
+    <a
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="inline-flex items-center px-3 py-1 text-sm font-medium text-blue-600 bg-blue-100 rounded-md hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+    >
+      <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6-3l5.447 2.724A1 1 0 0121 7.618v10.764a1 1 0 01-1.447.894L15 17m-6-3l6 3V7" />
+      </svg>
+      View Map
+    </a>
   );
 };
 
-const MapLink = ({ url }: { url: string }) => (
-  <a
-    href={url}
-    target="_blank"
-    rel="noopener noreferrer"
-    className="inline-flex items-center px-3 py-1 text-sm font-medium text-blue-600 bg-blue-100 rounded-md hover:bg-blue-200 transition-colors duration-200"
-  >
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
-      <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
-    </svg>
-    Voir sur Maps
-  </a>
-);
-
-const MiniMap = ({ coordinates, placeName }: { coordinates: Coordinates; placeName?: string }) => {
-  React.useEffect(() => {
-    // Fix Leaflet's icon paths
-    delete (L.Icon.Default.prototype as any)._getIconUrl;
-    L.Icon.Default.mergeOptions({
-      iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
-      iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-      shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-    });
-  }, []);
-
+const MapPreview = ({ coordinates, name }: { coordinates: Coordinates; name: string }) => {
   return (
-    <div className="flex flex-col gap-2">
-      <div className="h-[150px] w-[200px] rounded-lg overflow-hidden relative">
-        <MapContainer
-          key={`${coordinates.lat}-${coordinates.lng}`}
-          center={[coordinates.lat, coordinates.lng]}
-          zoom={15}
-          style={{ height: '150px', width: '200px' }}
-          zoomControl={false}
-          dragging={false}
-          scrollWheelZoom={false}
-          attributionControl={false}
-        >
-          <TileLayer
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          />
-          <Marker position={[coordinates.lat, coordinates.lng]}>
-            <Popup>
-              {placeName || 'Location'}
-            </Popup>
-          </Marker>
-        </MapContainer>
-      </div>
+    <div className="w-[300px] h-[200px]">
+      <MapContainer
+        center={[coordinates.lat, coordinates.lng]}
+        zoom={13}
+        style={{ height: '100%', width: '100%' }}
+      >
+        <TileLayer
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
+        <Marker position={[coordinates.lat, coordinates.lng]}>
+          <Popup>
+            {name || 'Location'}
+          </Popup>
+        </Marker>
+      </MapContainer>
     </div>
   );
 };
 
-const Table: React.FC<TableProps> = ({ headers: originalHeaders, data, googleMapsApiKey, initialSortColumn }) => {
-  const [sortColumn, setSortColumn] = useState<string | null>(initialSortColumn || null);
+const Table: React.FC<TableProps> = ({ 
+  headers: originalHeaders, 
+  data, 
+  initialSortColumn, 
+  renderActions,
+  onDelete 
+}) => {
+  const [sortColumn, setSortColumn] = useState<keyof Venue | null>(initialSortColumn as keyof Venue || null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
 
   const handleSort = (column: string) => {
-    if (sortColumn === column) {
+    const field = getFieldFromHeader(column, originalHeaders);
+    if (sortColumn === field) {
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
     } else {
-      setSortColumn(column);
+      setSortColumn(field);
       setSortDirection('asc');
     }
   };
@@ -120,8 +111,8 @@ const Table: React.FC<TableProps> = ({ headers: originalHeaders, data, googleMap
     if (!sortColumn) return data;
 
     return [...data].sort((a, b) => {
-      const aValue = a[sortColumn.toLowerCase()];
-      const bValue = b[sortColumn.toLowerCase()];
+      const aValue = a[sortColumn];
+      const bValue = b[sortColumn];
 
       if (typeof aValue === 'number' && typeof bValue === 'number') {
         return sortDirection === 'asc' ? aValue - bValue : bValue - aValue;
@@ -137,167 +128,122 @@ const Table: React.FC<TableProps> = ({ headers: originalHeaders, data, googleMap
     });
   };
 
-  // Add 'Image' column after 'Maps' if it exists and 'Image' isn't already present
-  const headers = React.useMemo(() => {
-    if (!originalHeaders.includes('Image') && originalHeaders.includes('Maps')) {
-      const mapsIndex = originalHeaders.indexOf('Maps');
-      return [
-        ...originalHeaders.slice(0, mapsIndex + 1),
-        'Image',
-        ...originalHeaders.slice(mapsIndex + 1)
-      ];
+  const renderCell = (header: string, value: string | undefined, row: Venue) => {
+    const headerIndex = originalHeaders.indexOf(header);
+    const mapValue = row.map;
+
+    // Actions column (last column)
+    if (header === 'Actions' && renderActions) {
+      return renderActions(row, onDelete);
     }
-    return originalHeaders;
-  }, [originalHeaders]);
+
+    // Price column (index 2)
+    if (headerIndex === 2) {
+      return formatPrice(value as string);
+    }
+
+    // Image column (index 6)
+    if (headerIndex === 6) {
+      if (!mapValue || typeof mapValue !== 'string') {
+        return null;
+      }
+      
+      let coordinates: Coordinates | null = null;
+      if (mapValue.includes('google.com/maps') || mapValue.includes('goo.gl/maps')) {
+        coordinates = parseGoogleMapsUrl(mapValue);
+      } else if (mapValue.includes(',')) {
+        try {
+          coordinates = {
+            lat: parseFloat(mapValue.split(',')[0]),
+            lng: parseFloat(mapValue.split(',')[1])
+          };
+        } catch (e) {
+          coordinates = null;
+        }
+      }
+
+      if (!coordinates || !config.googleMapsApiKey) {
+        return null;
+      }
+
+      return (
+        <LocationImage
+          coordinates={coordinates}
+          googleMapsApiKey={config.googleMapsApiKey}
+          className="w-[200px] h-[100px] rounded-lg"
+        />
+      );
+    }
+
+    // Maps column (index 4)
+    if (headerIndex === 4) {
+      if (!mapValue || typeof mapValue !== 'string') {
+        return <span className="text-red-500">Invalid location data</span>;
+      }
+      return <MapLink url={mapValue} />;
+    }
+
+    // Preview column (index 5)
+    if (headerIndex === 5) {
+      if (!mapValue || typeof mapValue !== 'string') {
+        return <span className="text-red-500">Invalid location data</span>;
+      }
+      
+      let coordinates: Coordinates | null = null;
+      if (mapValue.includes('google.com/maps') || mapValue.includes('goo.gl/maps')) {
+        coordinates = parseGoogleMapsUrl(mapValue);
+      } else if (mapValue.includes(',')) {
+        try {
+          coordinates = {
+            lat: parseFloat(mapValue.split(',')[0]),
+            lng: parseFloat(mapValue.split(',')[1])
+          };
+        } catch (e) {
+          coordinates = null;
+        }
+      }
+
+      if (!coordinates) {
+        return <span className="text-red-500">Invalid map data</span>;
+      }
+
+      return <MapPreview coordinates={coordinates} name={row.name} />;
+    }
+
+    return value;
+  };
 
   return (
     <div className="overflow-x-auto">
-      <table className="min-w-full table-auto border-collapse bg-white shadow-lg rounded-lg border border-gray-200">
+      <table className="min-w-full bg-white border border-gray-300">
         <thead>
-          <tr className="bg-gray-100">
-            {headers.map((header, index) => (
+          <tr>
+            {originalHeaders.map((header) => (
               <th
-                key={index}
+                key={header}
                 onClick={() => handleSort(header)}
-                className="px-6 py-3 border-b border-gray-200 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                className="px-6 py-3 bg-gray-100 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
               >
-                <div className="flex items-center">
-                  {header}
-                  {sortColumn === header && (
-                    <span className="ml-2">
-                      {sortDirection === 'asc' ? '↑' : '↓'}
-                    </span>
-                  )}
-                </div>
+                {header}
+                {sortColumn === getFieldFromHeader(header, originalHeaders) && (
+                  <span className="ml-1">
+                    {sortDirection === 'asc' ? '↑' : '↓'}
+                  </span>
+                )}
               </th>
             ))}
           </tr>
         </thead>
-        <tbody className="bg-white divide-y divide-gray-200">
+        <tbody>
           {getSortedData().map((row, rowIndex) => (
-            <tr key={rowIndex} className="hover:bg-gray-50 transition-colors duration-200">
-              {headers.map((header, colIndex) => {
-                const value = row[header.toLowerCase()];
+            <tr key={rowIndex} className={rowIndex % 2 === 0 ? 'bg-gray-50' : 'bg-white'}>
+              {originalHeaders.map((header) => {
+                const field = getFieldFromHeader(header, originalHeaders);
+                const value = field ? row[field] : null;
+
                 return (
-                  <td
-                    key={`${rowIndex}-${colIndex}`}
-                    className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 border-b border-r border-gray-200"
-                  >
-                    {header.toLowerCase() === 'status' ? (
-                      <StatusBadge status={String(value || '')} />
-                    ) : header.toLowerCase() === 'date' ? (
-                      formatDate(String(value || ''))
-                    ) : header.toLowerCase() === 'prix' ? (
-                      formatPrice(value || 0)
-                    ) : header.toLowerCase() === 'image' ? (
-                      (() => {
-                        const mapsValue = row['maps'];
-                        if (!mapsValue || typeof mapsValue !== 'string') {
-                          console.log('No valid maps value:', mapsValue);
-                          return null;
-                        }
-                        
-                        let coordinates: Coordinates | null = null;
-                        
-                        if (mapsValue.includes('google.com/maps') || mapsValue.includes('goo.gl/maps')) {
-                          coordinates = parseGoogleMapsUrl(mapsValue);
-                          console.log('Parsed Google Maps URL:', coordinates);
-                        } else if (mapsValue.includes(',')) {
-                          try {
-                            coordinates = {
-                              lat: parseFloat(mapsValue.split(',')[0]),
-                              lng: parseFloat(mapsValue.split(',')[1])
-                            };
-                            console.log('Parsed coordinates:', coordinates);
-                          } catch (e) {
-                            console.error('Error parsing coordinates:', e);
-                            coordinates = null;
-                          }
-                        }
-
-                        if (!coordinates) {
-                          console.log('No valid coordinates found');
-                          return null;
-                        }
-
-                        if (!googleMapsApiKey) {
-                          console.log('No Google Maps API key provided');
-                          return null;
-                        }
-
-                        return (
-                          <LocationImage
-                            coordinates={coordinates}
-                            googleMapsApiKey={googleMapsApiKey}
-                            className="w-[200px] h-[100px] rounded-lg"
-                          />
-                        );
-                      })()
-                    ) : header.toLowerCase() === 'maps' ? (
-                      (() => {
-                        if (typeof value !== 'string') return <span className="text-red-500">Invalid location data</span>;
-                        
-                        let parsedData: ParsedMapData | null = null;
-                        
-                        // Try parsing as Google Maps URL first
-                        if (value.includes('google.com/maps') || value.includes('goo.gl/maps')) {
-                          const coords = parseGoogleMapsUrl(value);
-                          if (coords) {
-                            parsedData = { coordinates: coords };
-                          }
-                        }
-                        
-                        // If not a valid Google Maps URL, try parsing as direct coordinates
-                        if (!parsedData && value.includes(',')) {
-                          try {
-                            parsedData = {
-                              coordinates: {
-                                lat: parseFloat(value.split(',')[0]),
-                                lng: parseFloat(value.split(',')[1])
-                              }
-                            };
-                          } catch (e) {
-                            parsedData = null;
-                          }
-                        }
-
-                        if (!parsedData?.coordinates) {
-                          // Try one more time with direct coordinates if URL parsing failed
-                          if (value.includes(',')) {
-                            try {
-                              const [lat, lng] = value.split(',').map(coord => parseFloat(coord.trim()));
-                              if (!isNaN(lat) && !isNaN(lng) && 
-                                  lat >= -90 && lat <= 90 && 
-                                  lng >= -180 && lng <= 180) {
-                                parsedData = {
-                                  coordinates: { lat, lng }
-                                };
-                              }
-                            } catch (e) {
-                              console.error('Error parsing direct coordinates:', e);
-                            }
-                          }
-
-                          if (!parsedData?.coordinates) {
-                            return (
-                              <div className="flex flex-col gap-2">
-                                <span className="text-yellow-600">Location preview not available</span>
-                                <MapLink url={value} />
-                              </div>
-                            );
-                          }
-                        }
-
-                        return (
-                          <div className="flex flex-col gap-2">
-                            <MiniMap coordinates={parsedData.coordinates} placeName={parsedData.placeName} />
-                            <MapLink url={value} />
-                          </div>
-                        );
-                      })()
-                    ) : (
-                      value
-                    )}
+                  <td key={header} className="px-6 py-4 whitespace-no-wrap text-sm leading-5 text-gray-500">
+                    {renderCell(header, value as string | undefined, row)}
                   </td>
                 );
               })}

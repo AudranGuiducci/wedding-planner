@@ -1,0 +1,68 @@
+{
+  "header": {
+    "languageSelector": "Langue"
+  },
+  "auth": {
+    "signOut": "Déconnexion"
+  },
+  "home": {
+    "title": "Accueil",
+    "subtitle": "Bienvenue sur votre portail de planification de mariage"
+  },
+  "venues": {
+    "title": "Lieux de Mariage",
+    "addButton": "Ajouter un lieu",
+    "add": {
+      "title": "Ajouter un nouveau lieu"
+    },
+    "edit": {
+      "title": "Modifier le lieu"
+    },
+    "deleteConfirmation": "Êtes-vous sûr de vouloir supprimer ce lieu ? Cette action ne peut pas être annulée.",
+    "headers": {
+      "region": "Région",
+      "name": "Nom",
+      "price": "Prix",
+      "comment": "Commentaire",
+      "maps": "Carte",
+      "preview": "Aperçu",
+      "image": "Image"
+    }
+  },
+  "common": {
+    "edit": "Modifier",
+    "save": "Enregistrer",
+    "add": "Ajouter",
+    "saving": "Enregistrement...",
+    "cancel": "Annuler",
+    "delete": "Supprimer"
+  },
+  "checklist": {
+    "title": "Liste de Tâches",
+    "addItem": "Ajouter une tâche",
+    "categories": {
+      "venue": "Lieu",
+      "attire": "Tenues",
+      "catering": "Traiteur",
+      "decoration": "Décoration",
+      "music": "Musique",
+      "photography": "Photographie",
+      "other": "Autre"
+    }
+  },
+  "budget": {
+    "title": "Suivi du Budget",
+    "total": "Budget Total",
+    "spent": "Montant Dépensé",
+    "remaining": "Restant",
+    "categories": {
+      "venue": "Lieu",
+      "attire": "Tenues",
+      "catering": "Traiteur",
+      "decoration": "Décoration",
+      "music": "Musique",
+      "photography": "Photographie",
+      "other": "Autre"
+    }
+  }
+}

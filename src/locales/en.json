@@ -1,0 +1,75 @@
+{
+  "header": {
+    "languageSelector": "Language"
+  },
+  "auth": {
+    "signOut": "Sign Out",
+    "signIn": "Sign In",
+    "signUp": "Sign Up",
+    "email": "Email",
+    "password": "Password",
+    "noAccount": "Don't have an account? Sign up",
+    "alreadyHaveAccount": "Already have an account? Sign in"
+  },
+  "home": {
+    "title": "Home",
+    "subtitle": "Welcome to your wedding planning portal"
+  },
+  "venues": {
+    "title": "Wedding Venues",
+    "addButton": "Add Venue",
+    "add": {
+      "title": "Add New Venue"
+    },
+    "edit": {
+      "title": "Edit Venue"
+    },
+    "deleteConfirmation": "Are you sure you want to delete this venue? This action cannot be undone.",
+    "headers": {
+      "region": "Region",
+      "name": "Name",
+      "price": "Price",
+      "comment": "Comment",
+      "maps": "Maps",
+      "preview": "Preview",
+      "image": "Image",
+      "externalLink": "External Link"
+    }
+  },
+  "common": {
+    "edit": "Edit",
+    "save": "Save",
+    "add": "Add",
+    "saving": "Saving...",
+    "cancel": "Cancel",
+    "delete": "Delete"
+  },
+  "checklist": {
+    "title": "Planning Checklist",
+    "addItem": "Add Item",
+    "categories": {
+      "venue": "Venue",
+      "attire": "Attire",
+      "catering": "Catering",
+      "decoration": "Decoration",
+      "music": "Music",
+      "photography": "Photography",
+      "other": "Other"
+    }
+  },
+  "budget": {
+    "title": "Budget Tracker",
+    "total": "Total Budget",
+    "spent": "Amount Spent",
+    "remaining": "Remaining",
+    "categories": {
+      "venue": "Venue",
+      "attire": "Attire",
+      "catering": "Catering",
+      "decoration": "Decoration",
+      "music": "Music",
+      "photography": "Photography",
+      "other": "Other"
+    }
+  }
+}
